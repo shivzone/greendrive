@@ -3,6 +3,7 @@
 """
 import os
 import sys
+import slackNotification
 
 from zeep import Client
 from zeep.wsse.username import UsernameToken
@@ -69,6 +70,8 @@ def main():
 	makeUsageAPIcall(client, startTime)
 	print "Completed ..."
 
+	slack = slackNotification
+	slack.sendMessage("It works!")
 
 if __name__== '__main__':
 	main()
