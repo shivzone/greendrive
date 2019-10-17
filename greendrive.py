@@ -9,14 +9,14 @@ from zeep import Client
 from zeep.wsse.username import UsernameToken
 from datetime import datetime, timedelta
 
-def makeUsageAPIcall(client, tStart):
+def makeUsageAPIcall(client, tStart, tEnd):
 	"""
 	Inputs:    tStart: Start time for API call in datetime format. 
 						E.g. tStart=datetime(2018, 5, 30, 00, 00, 00)
 	Note: the tEnd parameter will be set to the end of the day, e.g. datetime(2018, 5, 30, 23, 59, 59)
 	"""
 	print("Making usage API query..")
-	tEnd = tStart + timedelta(hours=23, minutes=59, seconds=59)
+	#tEnd = tStart + timedelta(hours=23, minutes=59, seconds=59)
 	usageSearchQuery = {
 		'fromTimeStamp': tStart,
 		'toTimeStamp': tEnd,
@@ -32,8 +32,8 @@ def makeUsageAPIcall(client, tStart):
 			row_session = [int(d.sessionID), d.startTime.strftime('%Y-%m-%d %H:%M:%S'), 
 							d.endTime.strftime('%Y-%m-%d %H:%M:%S'), float(d.Energy), 
 							str(d.stationID), int(d.portNumber), int(d.userID)]
-		        print row_session
-                except:
+			print(row_session)
+		except:
 			pass
 
 
@@ -43,32 +43,31 @@ def makeStationAPIcall(client):
 	searchQuery = {}
 	stationData = client.service.getStations(searchQuery)
 	numStations = len(stationData.stationData)
-        print numStations
+	print(numStations)
 
-        print stationData
+	print(stationData)
 
 	## Fill Pricing Table Rows - assumes only one pricing model exists currently
 	#price = stationData.stationData[0].Pricing[0]
         #print price
 
-
 def main():
-        startTime = datetime(2019, 10, 16, 9, 00, 00)
-        endTime = datetime(2019, 10, 16, 18, 00, 00)
+	startTime = datetime(2019, 10, 16, 9, 00, 00) - timedelta(hours=7, minutes=0, seconds=0)
+	endTime = datetime(2019, 10, 17, 18, 00, 00) - timedelta(hours=7, minutes=0, seconds=0)
         
-        if len(sys.argv) < 3:
-            print ("greendrive needs username(key) and password")
-            sys.exit(1)
-        username = sys.argv[1]
-        password = sys.argv[2]
+	if len(sys.argv) < 3:
+		print ("greendrive needs username(key) and password")
+		sys.exit(1)
+	username = sys.argv[1]
+	password = sys.argv[2]
 
 	wsdl_url = "https://webservices.chargepoint.com/cp_api_5.0.wsdl"
 	client = Client(wsdl_url, wsse=UsernameToken(username, password))
 
-	makeStationAPIcall(client) ## can make some check: if len(getStations)
+	#makeStationAPIcall(client) ## can make some check: if len(getStations)
 
-	makeUsageAPIcall(client, startTime)
-	print "Completed ..."
+	makeUsageAPIcall(client, startTime, endTime)
+	print("Completed ...")
 
 	slack = slackNotification
 	slack.sendMessage("It works!")
