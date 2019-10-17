@@ -8,7 +8,8 @@ import signal
 
 from zeep import Client
 from zeep.wsse.username import UsernameToken
-from datetime import datetime, time
+from datetime import datetime, time, timedelta
+from statistics import Statistics
 
 availableCount = 0
 inUseCount = 0
@@ -50,16 +51,60 @@ def duringWorkday():
 	else:
 		return False
 
+def makeStatisticsAPICall(client, startTime, endTime):
+	sessionsSearchQuery = {
+		'fromTimeStamp': startTime,
+		'toTimeStamp': endTime,
+	}
+	data = client.service.getChargingSessionData(sessionsSearchQuery)
+	return data
+
+
+def endWorkday():
+
+	startTime = datetime.now() - timedelta(hours=24)
+	endTime = datetime.now()
+
+	print("Pulling on statistics...")
+	result = makeStatisticsAPICall(client, startTime, endTime)
+	if result.responseCode != '100':
+		print ("Can not fetch statistics data for given period of time")
+		sys.exit(1)
+
+	data = result.ChargingSessionData
+
+	stat = Statistics(data)
+
+	message = ""
+
+	message = message + ("Total number of users charged today: {} \n".format(stat.totalNumberOfUsers()))
+	message = message + ("Total Energy: {} kWh \n".format(round(stat.totalEnergy(), 2)))
+
+	message = message + ("Charging time per user:\n")
+	timePerUser = stat.timePerUser()
+
+	for key in timePerUser:
+		row = timePerUser[str(key)]
+		time = row['totaltime']
+
+		separated_time = str(time).split(':')
+		human_readable = separated_time[0] + " hrs " + separated_time[1] + " minutes"
+		message = message + ("{} | {} \n".format(row['username'],human_readable))
+
+	print("Completed ...")
+
+	message = message + ("Have a good evening! Drive responsibly!")
+
+	slack = SlackNotification(sys.argv[3], "#greendrive-hackday-2019")
+	slack.sendMessage(message)
+
+	print(message)
+	sys.exit(0)
+
 
 def sig_handler(sig, frame):
 	print("It's the end of the 'day'")
 	return endWorkday()
-
-
-def endWorkday():
-	#invoke kates function
-	slack.sendMessage("Have a good evening! Drive responsibly!")
-	sys.exit(0)
 
 
 def main():
