@@ -11,4 +11,4 @@ pip install zeep
 ```
 
 ## Usage
-```python greendrive.py```
+```python greendrive.py <username> <password>```
