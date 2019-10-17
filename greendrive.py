@@ -4,6 +4,7 @@
 import sys
 import time as t
 from slackNotification import SlackNotification
+import signal
 
 from zeep import Client
 from zeep.wsse.username import UsernameToken
@@ -11,7 +12,8 @@ from datetime import datetime, time
 
 availableCount = 0
 inUseCount = 0
-
+slack = None
+client = None
 
 def makeStationStatuscall(client):
 	# Get station data
@@ -49,22 +51,37 @@ def duringWorkday():
 		return False
 
 
+def sig_handler(sig, frame):
+	print("It's the end of the 'day'")
+	return endWorkday()
+
+
+def endWorkday():
+	#invoke kates function
+	slack.sendMessage("Have a good evening! Drive responsibly!")
+	sys.exit(0)
+
+
 def main():
 	if len(sys.argv) < 4:
 		print("greendrive needs username(key), password, and slack token")
 		sys.exit(1)
 	username = sys.argv[1]
+
 	password = sys.argv[2]
 	slack_token = sys.argv[3]
+	global slack
 	slack = SlackNotification(slack_token, "#greendrive-hackday-2019")
 
 	slack.sendMessage("Good Morning! Charge responsibly!")
 
 	wsdl_url = "https://webservices.chargepoint.com/cp_api_5.1.wsdl"
+	global client
 	client = Client(wsdl_url, wsse=UsernameToken(username, password))
 	global inUseCount, availableCount
 
 	while duringWorkday():
+		signal.signal(signal.SIGINT, sig_handler)
 		inuse, available = makeStationStatuscall(client)
 		if inuse != inUseCount or available != availableCount:
 			inUseCount = inuse
@@ -77,7 +94,7 @@ def main():
 				slack.sendMessage("No one is charging! Grab your spot!")
 		t.sleep(60)
 
-	slack.sendMessage("Have a good evening! Drive responsibly!")
+	endWorkday()
 
 
 if __name__== '__main__':
