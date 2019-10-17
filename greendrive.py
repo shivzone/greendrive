@@ -112,9 +112,9 @@ def main():
 		print("greendrive needs username(key), password, and slack token")
 		sys.exit(1)
 	username = sys.argv[1]
-
 	password = sys.argv[2]
 	slack_token = sys.argv[3]
+
 	global slack
 	slack = SlackNotification(slack_token, "#greendrive-hackday-2019")
 
