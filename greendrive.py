@@ -3,7 +3,7 @@
 """
 import os
 import sys
-import slackNotification
+from slackNotification import SlackNotification
 
 from zeep import Client
 from zeep.wsse.username import UsernameToken
@@ -69,7 +69,7 @@ def main():
 	makeUsageAPIcall(client, startTime, endTime)
 	print("Completed ...")
 
-	slack = slackNotification
+	slack = SlackNotification(sys.argv[3], "#greendrive-hackday-2019")
 	slack.sendMessage("It works!")
 
 if __name__== '__main__':

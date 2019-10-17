@@ -10,5 +10,10 @@ We use [zeep](A modern/fast python SOAP client based on lxml / requests) a pytho
 pip install zeep
 ```
 
+### Slackclient
+```
+pip3 install slackclient
+```
+
 ## Usage
 ```python greendrive.py <username> <password>```
