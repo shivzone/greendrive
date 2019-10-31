@@ -1,4 +1,4 @@
-""" 
+"""
 
 """
 import sys
@@ -15,14 +15,31 @@ availableCount = 0
 inUseCount = 0
 slack = None
 client = None
+MAX_RETRIES = 3
+startHour = time(8, 0)
+endHour = time(18, 0)
+debug = False
 
 def makeStationStatuscall(client):
 	# Get station data
 	searchQuery = {
 		'portDetails': True
 	}
+	stationData = {}
+	retries = MAX_RETRIES
+	while retries > 0:
+		try:
+			stationData = client.service.getStationStatus(searchQuery)
+			break
+		except Exception as ex:
+			template = "An exception of type {0} occurred. Arguments:\n{1!r}"
+			message = template.format(type(ex).__name__, ex.args)
+			print(message)
+			retries -= 1
+	if retries == 0:
+		print("Error contacting chargepoint...exiting")
+		sys.exit(1)
 
-	stationData = client.service.getStationStatus(searchQuery)
 	numStations = len(stationData.stationData)
 	i = 0
 	inuse = 0
@@ -43,13 +60,15 @@ def makeStationStatuscall(client):
 
 
 def duringWorkday():
-	startHour = time(8, 0)
-	endHour = time(18, 0)
+	global startHour
+	global endHour
 	currentTime = datetime.now().time()
 	if currentTime > startHour and currentTime < endHour:
 		return True
 	else:
 		return False
+
+
 
 def makeStatisticsAPICall(client, startTime, endTime):
 	sessionsSearchQuery = {
@@ -62,7 +81,7 @@ def makeStatisticsAPICall(client, startTime, endTime):
 
 def endWorkday():
 
-	startTime = datetime.now() - timedelta(hours=24)
+	startTime = datetime.now() - timedelta(hours=10)
 	endTime = datetime.now()
 
 	print("Pulling on statistics...")
@@ -89,13 +108,13 @@ def endWorkday():
 
 		separated_time = str(time).split(':')
 		human_readable = separated_time[0] + " hrs " + separated_time[1] + " minutes"
-		message = message + ("{} | {} \n".format(row['username'],human_readable))
+		message = message + ("{}  |  {} \n".format(row['username'],human_readable))
 
 	print("Completed ...")
 
 	message = message + ("Have a good evening! Drive responsibly!")
 
-	slack = SlackNotification(sys.argv[3], "#greendrive-hackday-2019")
+	global slack
 	slack.sendMessage(message)
 
 	print(message)
@@ -114,9 +133,12 @@ def main():
 	username = sys.argv[1]
 	password = sys.argv[2]
 	slack_token = sys.argv[3]
+	global debug
+	if len(sys.argv) == 5 and sys.argv[4] == '--debug':
+		debug = True
 
 	global slack
-	slack = SlackNotification(slack_token, "#greendrive-hackday-2019")
+	slack = SlackNotification(slack_token, "#greendrive-hackday-2019", debug)
 
 	slack.sendMessage("Good Morning! Charge responsibly!")
 
@@ -137,7 +159,7 @@ def main():
 				slack.sendMessage("Time to charge up! {} free spots as of {}.".format(availableCount, datetime.now().strftime("%I:%M %p")))
 			else:
 				slack.sendMessage("No one is charging! Grab your spot!")
-		t.sleep(60)
+		t.sleep(120)
 
 	endWorkday()
 

@@ -33,9 +33,11 @@ class Statistics:
 
     def timePerUser(self):
         result = {}
+        index = 1
         for key in self.userMap:
             user = User(key)
-            userData = {'username' : user.getName(), 'totaltime' : self.userMap[key]['time']}
+            # userData = {'username' : user.getName(), 'totaltime' : self.userMap[key]['time']}
+            userData = {'username': 'EV User' + str(++index), 'totaltime': self.userMap[key]['time']}
 
             result.update({key : userData})
         return result
