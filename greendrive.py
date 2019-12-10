@@ -15,7 +15,7 @@ availableCount = 0
 inUseCount = 0
 slack = None
 client = None
-MAX_RETRIES = 3
+MAX_RETRIES = 10
 startHour = time(8, 0)
 endHour = time(18, 0)
 debug = False
@@ -35,6 +35,7 @@ def makeStationStatuscall(client):
 			template = "An exception of type {0} occurred. Arguments:\n{1!r}"
 			message = template.format(type(ex).__name__, ex.args)
 			print(message)
+                        sleep(60)
 			retries -= 1
 	if retries == 0:
 		print("Error contacting chargepoint...exiting")
@@ -165,4 +166,6 @@ def main():
 
 
 if __name__== '__main__':
+	sys.stdout = open('/Users/pivotal/workspace/greendrive.out', 'w')
+	sys.stderr = open('/Users/pivotal/workspace/greendrive.err', 'w')
 	main()
